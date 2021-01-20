@@ -1,0 +1,55 @@
+version: '3.7'
+
+networks:
+  default_network:
+    name: default_network
+    driver: bridge
+
+services:
+  rt-chat:
+    container_name: rt-chat
+    ports:
+      - 8080:8080
+    build:
+      context: . # Use an image built from the specified dockerfile in the current directory.
+      dockerfile: Dockerfile
+    environment:
+      - PORT=8080
+      - MONGO_URI=mongodb://mongodb:27017/rt-chat
+      - MONGO_DBNAME_V1=rt-chat
+      - MONGO_ROOMS_COL_V1=rooms
+      - MONGO_CHATS_COL_V1=chats
+    networks:
+      default_network:
+        aliases:
+          - rt-chat
+
+  mongodb:
+    container_name: mongodb
+    hostname: mongodb
+    image: mongo:bionic
+    volumes:
+      - ./mongodb/data:/data/db
+    ports:
+      - 27017:27017
+    networks:
+      default_network:
+        aliases:
+          - mongodb
+
+  nosqlclient:
+    container_name: nosqlclient
+    hostname: nosqlclient
+    image: mongoclient/mongoclient
+    volumes:
+      - ./nosqlclient/data:/data
+    depends_on:
+      - mongodb
+    environment:
+      - MONGO_URL=${MONGO_URL-mongodb://mongodb:27017/admin}
+    ports:
+      - 3000:3000
+    networks:
+      default_network:
+        aliases:
+          - nosqlclient
